@@ -8,7 +8,6 @@ const INITIAL_AGE_BANDS = [
   { minimum: 85, maximum: 100, share: 0.074 }
 ];
 const ENERGY_FERTILITY_SENSITIVITY = 0.5;
-const MAX_BIRTH_MULTIPLIER = 2;
 
 function chooseWeighted(items, random) {
   const total = items.reduce((sum, item) => sum + item.weight, 0);
@@ -56,17 +55,22 @@ function shuffle(items, random) {
 }
 
 export class LiveSimulation {
-  constructor(dataset, { scale = 100, seed = 20261107, startYear = 2025 } = {}) {
+  constructor(dataset, { scale = 100, seed = 20261107, startYear = 2025, maxBirthMultiplier = 2 } = {}) {
     if (!Number.isInteger(scale) || scale < 1) {
       throw new RangeError("scale must be a positive integer");
+    }
+    if (!Number.isFinite(maxBirthMultiplier) || maxBirthMultiplier < 1) {
+      throw new RangeError("maxBirthMultiplier must be a finite number at least 1");
     }
 
     this.random = createRandom(seed);
     this.seed = seed;
     this.scale = scale;
+    this.maxBirthMultiplier = maxBirthMultiplier;
     this.year = startYear;
     this.nextId = 0;
     this.agents = [];
+    this.birthRate = null;
 
     const distribution = createInitialDistribution(dataset);
     const surnameWeights = distribution.map((surname) => ({
@@ -112,6 +116,7 @@ export class LiveSimulation {
   }
 
   step() {
+    const startingPopulation = this.agents.length;
     const deceasedIds = new Set();
     for (const agent of this.agents) {
       if (this.random() < deathProbability(agent.age)) {
@@ -131,7 +136,8 @@ export class LiveSimulation {
     }
 
     this.createMarriages();
-    this.createBirths();
+    const births = this.createBirths();
+    this.birthRate = startingPopulation === 0 ? null : births / startingPopulation;
     this.year += 1;
   }
 
@@ -150,7 +156,7 @@ export class LiveSimulation {
   }
 
   createBirths() {
-    if (this.agents.length === 0) return;
+    if (this.agents.length === 0) return 0;
 
     const birthMultiplier = this.birthMultiplier();
     const agentsById = new Map(this.agents.map((agent) => [agent.id, agent]));
@@ -160,7 +166,7 @@ export class LiveSimulation {
       if (
         mother.sex !== "female" ||
         mother.spouseId === null ||
-        this.random() >= birthProbability(mother.age) * birthMultiplier
+        this.random() >= Math.min(1, birthProbability(mother.age) * birthMultiplier)
       ) {
         continue;
       }
@@ -180,12 +186,13 @@ export class LiveSimulation {
     }
 
     this.agents.push(...births);
+    return births.length;
   }
 
   birthMultiplier() {
     if (this.agents.length === 0) return null;
     const energyPerPerson = this.initialAgentCount / this.agents.length;
-    return Math.min(MAX_BIRTH_MULTIPLIER, 1 + ENERGY_FERTILITY_SENSITIVITY * (energyPerPerson - 1));
+    return Math.min(this.maxBirthMultiplier, 1 + ENERGY_FERTILITY_SENSITIVITY * (energyPerPerson - 1));
   }
 
   summary() {
@@ -202,6 +209,7 @@ export class LiveSimulation {
       population: this.agents.length * this.scale,
       agents: this.agents.length,
       couples: marriedAgents / 2,
+      birthRate: this.birthRate,
       energyPerPerson: this.agents.length === 0 ? null : this.initialAgentCount / this.agents.length,
       birthMultiplier: this.birthMultiplier(),
       surnames: [...surnameCounts.entries()]

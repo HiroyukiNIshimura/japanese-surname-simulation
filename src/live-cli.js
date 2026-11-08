@@ -33,12 +33,14 @@ function toInteger(value, option) {
   return parsed;
 }
 
-function render(summary, { seed, scale, yearsPerSecond, paused }) {
+function render(summary, { seed, scale, yearsPerSecond, paused, maxBirthMultiplier }) {
   console.clear();
   const finished = summary.agents === 0;
   console.log(`日本の名字ライブシミュレーション  ${finished ? "終了" : paused ? "一時停止中" : "進行中"}`);
   console.log(`年: ${summary.year}  推計人口: ${summary.population.toLocaleString("ja-JP")}人  代表エージェント: ${summary.agents.toLocaleString("ja-JP")}  世帯: ${summary.couples.toLocaleString("ja-JP")}`);
-  console.log(`1エージェント: ${scale.toLocaleString("ja-JP")}人  速度: ${yearsPerSecond}年/秒  seed: ${seed}`);
+  const birthRate = summary.birthRate === null ? "未計算" : `${(summary.birthRate * 1000).toFixed(2)}人`;
+  console.log(`年間出生率（年初人口1,000人あたり）: ${birthRate}`);
+  console.log(`1エージェント: ${scale.toLocaleString("ja-JP")}人  速度: ${yearsPerSecond}年/秒  seed: ${seed}  出生確率の倍率上限: ${maxBirthMultiplier}倍`);
   if (!finished) {
     console.log(`1人あたりのエネルギー: 初期の${summary.energyPerPerson.toFixed(2)}倍  出生確率の倍率: ${summary.birthMultiplier.toFixed(2)}倍`);
   }
@@ -61,7 +63,7 @@ function render(summary, { seed, scale, yearsPerSecond, paused }) {
 
 const argumentsList = process.argv.slice(2);
 if (argumentsList.includes("--help")) {
-  console.log("Usage: npm run live -- [--years-per-second 1] [--scale 100] [--seed 20261107]");
+  console.log("Usage: npm run live -- [--years-per-second 1] [--scale 100] [--seed 20261107] [--max-birth-multiplier 2]");
   process.exit(0);
 }
 
@@ -69,8 +71,12 @@ const dataset = JSON.parse(await readFile(resolve(root, "data/surnames.json"), "
 const suppliedSeed = optionValue(argumentsList, "--seed", null);
 const seed = suppliedSeed === null ? randomBytes(4).readUInt32LE() : toInteger(suppliedSeed, "--seed");
 const scale = toInteger(optionValue(argumentsList, "--scale", "100"), "--scale");
+const maxBirthMultiplier = toPositiveNumber(optionValue(argumentsList, "--max-birth-multiplier", "2"), "--max-birth-multiplier");
+if (maxBirthMultiplier < 1) {
+  throw new RangeError("--max-birth-multiplier must be at least 1");
+}
 let yearsPerSecond = toPositiveNumber(optionValue(argumentsList, "--years-per-second", "1"), "--years-per-second");
-const simulation = new LiveSimulation(dataset, { scale, seed });
+const simulation = new LiveSimulation(dataset, { scale, seed, maxBirthMultiplier });
 let paused = false;
 let carry = 0;
 let lastTick = performance.now();
@@ -78,7 +84,7 @@ let timer;
 
 function renderState() {
   const summary = simulation.summary();
-  render(summary, { seed, scale, yearsPerSecond, paused });
+  render(summary, { seed, scale, yearsPerSecond, paused, maxBirthMultiplier });
   return summary.agents === 0;
 }
 

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "simulate": "node src/cli.js",
-    "live": "node src/live-cli.js --scale 100",
+    "live": "node src/live-cli.js --scale 100 --max-birth-multiplier 4",
     "test": "node --test"
   }
 }

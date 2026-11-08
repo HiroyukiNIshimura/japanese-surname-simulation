@@ -90,10 +90,67 @@ test("energy adjusts birth probability based on population and caps the multipli
   }
 });
 
+test("custom birth multiplier limit affects birth probabilities", () => {
+  for (const [limit, randomValue, expectedBirths] of [[2, 0.4, 0], [3, 0.4, 1], [1, 0.2, 0], [10, 0.999, 1]]) {
+    const simulation = new LiveSimulation({ population: 40, surnames: [] }, { scale: 1, maxBirthMultiplier: limit });
+    simulation.agents = [
+      { id: 0, age: 20, sex: "female", surname: "佐藤", spouseId: 1 },
+      { id: 1, age: 30, sex: "male", surname: "佐藤", spouseId: 0 }
+    ];
+    simulation.nextId = 2;
+    simulation.random = () => randomValue;
+
+    assert.equal(simulation.summary().birthMultiplier, limit);
+    assert.equal(simulation.createBirths(), expectedBirths);
+  }
+});
+
+test("birth multiplier limit must be finite and at least one", () => {
+  for (const maxBirthMultiplier of [0, -1, 0.99, Infinity, NaN, "2"]) {
+    assert.throws(
+      () => new LiveSimulation({ population: 0, surnames: [] }, { maxBirthMultiplier }),
+      /maxBirthMultiplier must be a finite number at least 1/
+    );
+  }
+});
+
 test("an empty population has no per-person energy or birth multiplier", () => {
   const simulation = new LiveSimulation({ population: 0, surnames: [] }, { scale: 1 });
   simulation.createBirths();
   assert.equal(simulation.summary().energyPerPerson, null);
   assert.equal(simulation.summary().birthMultiplier, null);
   assert.equal(simulation.summary().agents, 0);
+});
+
+test("annual birth rate uses births divided by start-of-year population", () => {
+  const simulation = new LiveSimulation({ population: 200, surnames: [] }, { scale: 100 });
+  simulation.agents = [
+    { id: 0, age: 24, sex: "female", surname: "佐藤", spouseId: 1 },
+    { id: 1, age: 25, sex: "male", surname: "佐藤", spouseId: 0 }
+  ];
+  simulation.nextId = 2;
+  simulation.random = () => 0.05;
+
+  assert.equal(simulation.summary().birthRate, null);
+  simulation.step();
+  assert.equal(simulation.summary().birthRate, 0.5);
+  assert.equal(simulation.summary().population, 300);
+  assert.equal(simulation.summary().birthRate, 0.5);
+
+  simulation.random = () => 0.5;
+  simulation.step();
+  assert.equal(simulation.summary().birthRate, 0);
+});
+
+test("annual birth rate handles extinction and an empty start", () => {
+  const simulation = new LiveSimulation({ population: 1, surnames: [] }, { scale: 1 });
+  simulation.agents = [
+    { id: 0, age: 90, sex: "male", surname: "佐藤", spouseId: null }
+  ];
+  simulation.random = () => 0;
+  simulation.step();
+  assert.equal(simulation.summary().population, 0);
+  assert.equal(simulation.summary().birthRate, 0);
+  simulation.step();
+  assert.equal(simulation.summary().birthRate, null);
 });

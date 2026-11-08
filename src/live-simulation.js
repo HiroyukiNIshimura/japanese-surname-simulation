@@ -7,6 +7,8 @@ const INITIAL_AGE_BANDS = [
   { minimum: 75, maximum: 84, share: 0.101 },
   { minimum: 85, maximum: 100, share: 0.074 }
 ];
+const ENERGY_FERTILITY_SENSITIVITY = 0.5;
+const MAX_BIRTH_MULTIPLIER = 2;
 
 function chooseWeighted(items, random) {
   const total = items.reduce((sum, item) => sum + item.weight, 0);
@@ -72,6 +74,7 @@ export class LiveSimulation {
       weight: surname.people
     }));
     const agentCount = Math.round(dataset.population / scale);
+    this.initialAgentCount = agentCount;
 
     for (let index = 0; index < agentCount; index += 1) {
       const ageBand = chooseWeighted(
@@ -147,6 +150,9 @@ export class LiveSimulation {
   }
 
   createBirths() {
+    if (this.agents.length === 0) return;
+
+    const birthMultiplier = this.birthMultiplier();
     const agentsById = new Map(this.agents.map((agent) => [agent.id, agent]));
     const births = [];
 
@@ -154,7 +160,7 @@ export class LiveSimulation {
       if (
         mother.sex !== "female" ||
         mother.spouseId === null ||
-        this.random() >= birthProbability(mother.age)
+        this.random() >= birthProbability(mother.age) * birthMultiplier
       ) {
         continue;
       }
@@ -176,6 +182,12 @@ export class LiveSimulation {
     this.agents.push(...births);
   }
 
+  birthMultiplier() {
+    if (this.agents.length === 0) return null;
+    const energyPerPerson = this.initialAgentCount / this.agents.length;
+    return Math.min(MAX_BIRTH_MULTIPLIER, 1 + ENERGY_FERTILITY_SENSITIVITY * (energyPerPerson - 1));
+  }
+
   summary() {
     const surnameCounts = new Map();
     let marriedAgents = 0;
@@ -190,6 +202,8 @@ export class LiveSimulation {
       population: this.agents.length * this.scale,
       agents: this.agents.length,
       couples: marriedAgents / 2,
+      energyPerPerson: this.agents.length === 0 ? null : this.initialAgentCount / this.agents.length,
+      birthMultiplier: this.birthMultiplier(),
       surnames: [...surnameCounts.entries()]
         .map(([name, count]) => ({
           name,

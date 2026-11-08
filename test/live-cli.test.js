@@ -59,6 +59,7 @@ test("live CLI stops at extinction even when multiple years are due", async () =
     "--scale", "200000000", "--seed", "81", "--years-per-second", "100000"
   ]);
   assert.equal(result.code, 0, result.errors);
+  assert.match(result.output, /1人あたりのエネルギー: 初期の1\.00倍  出生確率の倍率: 1\.00倍/);
   assert.match(result.output, /年: 2026\s+推計人口: 0人/);
   assert.match(result.output, /人口が0になったため/);
   assert.doesNotMatch(result.output, /年: 2027/);

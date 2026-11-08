@@ -39,6 +39,9 @@ function render(summary, { seed, scale, yearsPerSecond, paused }) {
   console.log(`日本の名字ライブシミュレーション  ${finished ? "終了" : paused ? "一時停止中" : "進行中"}`);
   console.log(`年: ${summary.year}  推計人口: ${summary.population.toLocaleString("ja-JP")}人  代表エージェント: ${summary.agents.toLocaleString("ja-JP")}  世帯: ${summary.couples.toLocaleString("ja-JP")}`);
   console.log(`1エージェント: ${scale.toLocaleString("ja-JP")}人  速度: ${yearsPerSecond}年/秒  seed: ${seed}`);
+  if (!finished) {
+    console.log(`1人あたりのエネルギー: 初期の${summary.energyPerPerson.toFixed(2)}倍  出生確率の倍率: ${summary.birthMultiplier.toFixed(2)}倍`);
+  }
   console.log("");
   console.table(
     summary.surnames

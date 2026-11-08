@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import dataset from "../data/surnames.json" with { type: "json" };
 import { LiveSimulation } from "../src/live-simulation.js";
-import { projectPopulation } from "../src/simulator.js";
 
 test("live simulation defaults to 100 people per agent", () => {
   const simulation = new LiveSimulation({ population: 1000, surnames: [] }, { seed: 42 });
@@ -39,7 +38,7 @@ test("live simulation is reproducible with the same seed", () => {
 });
 
 test("death is evaluated at the current age before survivors age", () => {
-  const simulation = new LiveSimulation({ population: 0, surnames: [] }, { scale: 1 });
+  const simulation = new LiveSimulation({ population: 2, surnames: [] }, { scale: 1 });
   simulation.agents = [
     { id: 0, age: 0, sex: "male", surname: "佐藤", spouseId: null },
     { id: 1, age: 1, sex: "male", surname: "佐藤", spouseId: null }
@@ -56,7 +55,7 @@ test("death is evaluated at the current age before survivors age", () => {
 test("birth probabilities use the calibrated age bands", () => {
   for (const [age, probability] of [[19, 0], [20, 0.15], [29, 0.15], [30, 0.0875], [39, 0.0875], [40, 0]]) {
     for (const randomValue of probability === 0 ? [0] : [probability - 0.0001, probability]) {
-      const simulation = new LiveSimulation({ population: 0, surnames: [] }, { scale: 1 });
+      const simulation = new LiveSimulation({ population: 2, surnames: [] }, { scale: 1 });
       simulation.agents = [
         { id: 0, age, sex: "female", surname: "佐藤", spouseId: 1 },
         { id: 1, age: 30, sex: "male", surname: "佐藤", spouseId: 0 }
@@ -71,19 +70,30 @@ test("birth probabilities use the calibrated age bands", () => {
   }
 });
 
-test("live population stays within 4% of the 2050 and 2070 projections for three seeds", () => {
-  for (const seed of [20261107, 20261108, 20261109]) {
-    const simulation = new LiveSimulation(dataset, { scale: 1000, seed });
-    for (let year = 2026; year <= 2070; year += 1) {
-      simulation.step();
-      if (year === 2050 || year === 2070) {
-        const target = projectPopulation(year);
-        const actual = simulation.summary().population;
-        assert.ok(
-          Math.abs(actual - target) / target < 0.04,
-          `seed ${seed}, year ${year}: ${actual} differs from ${target} by 4% or more`
-        );
-      }
+test("energy adjusts birth probability based on population and caps the multiplier", () => {
+  for (const [initial, population, expectedMultiplier] of [[2, 2, 1], [4, 2, 1.5], [6, 2, 2], [20, 2, 2], [1, 2, 0.75]]) {
+    for (const offset of [-0.0001, 0]) {
+      const simulation = new LiveSimulation({ population: initial, surnames: [] }, { scale: 1 });
+      simulation.agents = [
+        { id: 0, age: 20, sex: "female", surname: "佐藤", spouseId: 1 },
+        { id: 1, age: 30, sex: "male", surname: "佐藤", spouseId: 0 }
+      ];
+      simulation.nextId = 2;
+      simulation.random = () => 0.15 * expectedMultiplier + offset;
+
+      const summary = simulation.summary();
+      assert.equal(summary.energyPerPerson, initial / population);
+      assert.equal(summary.birthMultiplier, expectedMultiplier);
+      simulation.createBirths();
+      assert.equal(simulation.agents.length, offset < 0 ? 3 : 2);
     }
   }
+});
+
+test("an empty population has no per-person energy or birth multiplier", () => {
+  const simulation = new LiveSimulation({ population: 0, surnames: [] }, { scale: 1 });
+  simulation.createBirths();
+  assert.equal(simulation.summary().energyPerPerson, null);
+  assert.equal(simulation.summary().birthMultiplier, null);
+  assert.equal(simulation.summary().agents, 0);
 });

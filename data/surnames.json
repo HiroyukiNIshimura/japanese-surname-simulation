@@ -1,0 +1,16 @@
+{
+  "asOf": "2025-10",
+  "population": 123262448,
+  "surnames": [
+    { "name": "佐藤", "rank": 1, "people": 1798000 },
+    { "name": "鈴木", "rank": 2, "people": 1745000 },
+    { "name": "高橋", "rank": 3, "people": 1361000 },
+    { "name": "田中", "rank": 4, "people": 1293000 },
+    { "name": "伊藤", "rank": 5, "people": 1037000 },
+    { "name": "渡辺", "rank": 6, "people": 1028000 },
+    { "name": "山本", "rank": 7, "people": 1005000 },
+    { "name": "中村", "rank": 8, "people": 1003000 },
+    { "name": "小林", "rank": 9, "people": 989000 },
+    { "name": "加藤", "rank": 10, "people": 861000 }
+  ]
+}

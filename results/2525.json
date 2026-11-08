@@ -1,0 +1,85 @@
+{
+  "assumptions": {
+    "inheritance": "father-surname",
+    "marriage": "same-surname",
+    "differentialFertility": false,
+    "immigration": "included only in the population projection, not as new surnames",
+    "post2070Population": "extends the 2050-2070 annual rate of change"
+  },
+  "seed": 20261107,
+  "generationYears": 30,
+  "generations": [
+    {
+      "year": 2025,
+      "population": 123262448,
+      "surnames": [
+        {
+          "name": "佐藤",
+          "rank": 1,
+          "people": 1798000,
+          "share": 0.014586762060737266
+        },
+        {
+          "name": "鈴木",
+          "rank": 2,
+          "people": 1745000,
+          "share": 0.014156785203552017
+        },
+        {
+          "name": "高橋",
+          "rank": 3,
+          "people": 1361000,
+          "share": 0.011041481181681545
+        },
+        {
+          "name": "田中",
+          "rank": 4,
+          "people": 1293000,
+          "share": 0.010489812761141982
+        },
+        {
+          "name": "伊藤",
+          "rank": 5,
+          "people": 1037000,
+          "share": 0.008412943413228334
+        },
+        {
+          "name": "渡辺",
+          "rank": 6,
+          "people": 1028000,
+          "share": 0.008339928475215745
+        },
+        {
+          "name": "山本",
+          "rank": 7,
+          "people": 1005000,
+          "share": 0.008153334744739128
+        },
+        {
+          "name": "中村",
+          "rank": 8,
+          "people": 1003000,
+          "share": 0.008137109202958553
+        },
+        {
+          "name": "小林",
+          "rank": 9,
+          "people": 989000,
+          "share": 0.008023530410494525
+        },
+        {
+          "name": "加藤",
+          "rank": 10,
+          "people": 861000,
+          "share": 0.006985095736537701
+        },
+        {
+          "name": "その他",
+          "rank": null,
+          "people": 111142448,
+          "share": 0.9016732168097132
+        }
+      ]
+    }
+  ]
+}

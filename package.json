@@ -1,0 +1,11 @@
+{
+  "name": "japanese-surname-simulation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "simulate": "node src/cli.js",
+    "live": "node src/live-cli.js --scale 100",
+    "test": "node --test"
+  }
+}
